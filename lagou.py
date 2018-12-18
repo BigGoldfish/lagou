@@ -2,37 +2,63 @@
 import json
 import requests
 import time
-import numpy
+from openpyxl import Workbook
+from settings import *
 
-headers = {
-	'Accept': 'application/json, text/javascript, */*; q=0.01',
-	'Accept-Encoding': 'gzip, deflate, br',
-	'Accept-Language': 'zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7',
-	'Connection': 'keep-alive',
-	'Content-Length': '25',
-	'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-	'Host': 'www.lagou.com',
-	'Origin': 'https://www.lagou.com',
-	'Referer': 'https://www.lagou.com/jobs/list_linux?city=%E6%9D%AD%E5%B7%9E&cl=false&fromSearch=true&labelWords=&suginput=',
-	'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36',
-	'X-Anit-Forge-Code': '0',
-	'X-Anit-Forge-Token': 'None',
-	'X-Requested-With': 'XMLHttpRequest',
-}
-url = 'https://www.lagou.com/jobs/positionAjax.json'
+def GetResponse():
+    response = requests.post(url, data = para, headers = headers, cookies = cookies)
+    time.sleep(2)
+    response_json = json.loads(response.text)
+    return response_json 
 
+def GetLable(result, lable):
+    LableList = result[lable]
+    Lable = ''
+    if (LableList == [] or LableList[0] == '""'):
+        Lable = '无'
+    else:
+        for item in LableList:
+            Lable = Lable + item + ','
+        Lable = Lable[:-1]
+    return Lable
 
+def GetContent():
+    content = []
+    response_json = GetResponse()
+    for pn in range(1, 31):
+        print('正在保存第{}页\n'.format(pn))
+        if (pn != '1'):
+            para['first'] = 'false'
+        para['pn'] = str(pn)
+        response_json = GetResponse()
+        results = response_json['content']['positionResult']['result']
+        for result in results:
+            company = result['companyFullName']
+            financeStage = result['financeStage']
+            companySize = result['companySize']
+            companyLabel = GetLable(result, 'companyLabelList')
+            district = result['district']
+            positionName = result['positionName']
+            education = result['education']
+            positionLable = GetLable(result, 'positionLables')
+            jobNature = result['jobNature']
+            salary = result['salary']
+            workYear = result['workYear']
+            content.append([company, financeStage, companySize, companyLabel, district, positionName, education, positionLable, jobNature, salary, workYear])
+        print('完成！\n')
+    return content
 
-for j in range(30):
-	try:
-		html = requests.get(url, headers = headers).text
-		time.sleep(numpy.random.rand()*10)
-		json_obj = json.loads(html)
-		positionresult = json_obj['content']['positionResult']
-		result = positionresult['result']
-		for i in range(15):
-			print(result[i]['companyShortName'])
-	except:
-		print("failure")
-		continue
+def save_xlsx(content):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = filename
+    ws.append(['公司名称','融资情况','公司规模','公司标签','区域','职位名称','学历','职位标签','工作性质','薪资','工作年限'])
+    for item in content:
+        ws.append(item)
+    wb.save(filename + '.xlsx')
+def main():
+    content = GetContent()
+    save_xlsx(content)
 
+if __name__ == '__main__':
+    main()
