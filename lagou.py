@@ -1,4 +1,8 @@
 #encoding=utf-8
+'''
+    根据地名和职位名搜索
+    保存前30页内容到xlsx
+'''
 import json
 import requests
 import time

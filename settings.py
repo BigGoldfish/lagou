@@ -1,7 +1,9 @@
 #encoding=utf-8
 '''
-    city = '杭州'
-    kd = 'linux'
+    是否为第一页:first
+    页码:pn
+    职位名称:kd
+    城市:city
 '''
 city = '杭州'
 kd = 'linux'
